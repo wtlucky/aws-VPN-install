@@ -20,12 +20,16 @@ fi
 
 # Update server
 apt-get update && apt-get upgrade -y
+
 # VPN 1 - Setup L2TP-IPSEC
 PRIVATE_IP=`wget -q -O - 'http://169.254.169.254/latest/meta-data/local-ipv4'`
-PUBLIC_IP=`wget -q -O - 'http://169.254.169.254/latest/meta-data/public-ipv4'
+PUBLIC_IP=`wget -q -O - 'http://169.254.169.254/latest/meta-data/public-ipv4'`
+
 apt-get install -y openswan xl2tpd
+
 cat > /etc/ipsec.conf <<EOF
 version 2.0
+
 config setup
   dumpdir=/var/run/pluto/
   nat_traversal=yes
@@ -58,7 +62,7 @@ conn vpnpsk
 EOF
 
 cat > /etc/ipsec.secrets <<EOF
-$PUBLIC_IP  %any  : PSK \"$IPSEC_PSK\"
+$PUBLIC_IP  %any  : PSK "$IPSEC_PSK"
 EOF
 
 cat > /etc/xl2tpd/xl2tpd.conf <<EOF
@@ -99,9 +103,9 @@ EOF
 
 cat > /etc/ppp/chap-secrets <<EOF
 # Secrets for authentication using CHAP
-# client\tserver\tsecret\t\t\tIP addresses
+# client  server  secret      IP addresses
 
-$VPN_USER\tl2tpd   $VPN_PASSWORD   *
+$VPN_USER l2tpd   $VPN_PASSWORD   *
 EOF
 
 iptables -t nat -A POSTROUTING -s 192.168.42.0/24 -o eth0 -j MASQUERADE
@@ -123,13 +127,13 @@ chmod a+x /etc/network/if-pre-up.d/iptablesload
 
 #VPN 2 - Setup PPTP Server
 apt-get install pptpd -y
-echo \"localip 10.0.0.1\" >> /etc/pptpd.conf
-echo \"remoteip 10.0.0.100-200\" >> /etc/pptpd.conf
-echo \"$VPN_USER pptpd $VPN_PASSWORD *\" >> /etc/ppp/chap-secrets
-echo \"ms-dns 8.8.8.8\" >> /etc/ppp/pptpd-options
-echo \"ms-dns 8.8.4.4\" >> /etc/ppp/pptpd-options
+echo "localip 10.0.0.1" >> /etc/pptpd.conf
+echo "remoteip 10.0.0.100-200" >> /etc/pptpd.conf
+echo "$VPN_USER pptpd $VPN_PASSWORD *" >> /etc/ppp/chap-secrets
+echo "ms-dns 8.8.8.8" >> /etc/ppp/pptpd-options
+echo "ms-dns 8.8.4.4" >> /etc/ppp/pptpd-options
 service pptpd restart
 
-echo \"net.ipv4.ip_forward = 1\" >> /etc/sysctl.conf
+echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
 sysctl -p
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE && iptables-save
