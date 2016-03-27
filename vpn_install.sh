@@ -19,7 +19,7 @@ if [ "$IPSEC_PSK" = "" ]; then
 fi
 
 # Update server
-apt-get update && apt-get upgrade -y
+# apt-get update && apt-get upgrade -y
 
 # VPN 1 - Setup L2TP-IPSEC
 PRIVATE_IP=`wget -q -O - 'http://169.254.169.254/latest/meta-data/local-ipv4'`
